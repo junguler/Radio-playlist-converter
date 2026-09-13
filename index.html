@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universal Playlist Converter</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #121212;
+  color: #ffffff;
+  border-radius: 0px;
+}
+h1 {
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+.container {
+  background: #1e1e1e;
+  padding: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+  width: 620px;
+  margin: auto;
+  position: relative;
+}
+.input-group {
+  display: flex;
+  align-items: center;
+}
+textarea, input, select {
+  flex-grow: 1;
+  margin: 5px 0;
+  padding: 10px;
+  border: 1px solid #333;
+  background-color: #333;
+  color: #ffffff;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+select {
+  height: 40px;
+}
+button {
+  width: 120px;
+  margin-left: 10px;
+  border: 1px solid #888;
+  background-color: #888;
+  color: white;
+  cursor: pointer;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  text-align: center;
+}
+button:hover {
+  background-color: #aaa;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.cancel-button {
+  display: none;
+  background-color: #d9534f;
+}
+.cancel-button:hover {
+  background-color: #c9302c;
+}
+#downloadButton {
+  display: none;
+  width: 200px;
+  margin: 10px auto;
+  height: 40px;
+  color: white;
+  background-color: #4CAF50;
+  border: 1px solid #4CAF50;
+}
+#downloadButton:hover {
+  background-color: #45a049;
+}
+.output-wrapper {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  margin: 5px 0 10px 0;
+  border: 1px solid #333;
+  box-sizing: border-box;
+  background-color: #333;
+  resize: both;
+  overflow: auto;
+  min-width: 300px;
+  min-height: 80px;
+  max-width: none;
+  max-height: 80vh;
+}
+.output-wrapper textarea#output {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 10px;
+  border: none;
+  background-color: transparent;
+  color: #ffffff;
+  box-sizing: border-box;
+  resize: none;
+  overflow: auto;
+  display: block;
+  min-width: 100%;
+  min-height: 100%;
+  white-space: pre;
+}
+.output-wrapper p#status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 10px;
+  border: none;
+  background-color: #333;
+  box-sizing: border-box;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow: auto;
+  display: none;
+}
+#summaryLine {
+  text-align: left;
+  font-size: 0.85em;
+  color: #bbbbbb;
+  margin: 5px 0 10px 0;
+  min-height: 1em;
+}
+.settings {
+  margin: 5px 0;
+  padding: 5px 0;
+}
+.settings .input-group label {
+  width: 130px;
+  text-align: left;
+  padding: 10px 0;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+.settings .input-group select {
+  margin-right: 0;
+}
+.advanced-settings {
+  margin-top: 5px;
+  text-align: left;
+}
+.advanced-settings summary {
+  cursor: pointer;
+  color: #bbbbbb;
+  padding: 6px 0;
+  font-size: 0.9em;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9em;
+  color: #ffffff;
+}
+.setting-item label {
+  margin-bottom: 3px;
+}
+.setting-item input[type="text"],
+.setting-item input[type="number"] {
+  margin: 0;
+}
+.checkbox-item {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+}
+.checkbox-item input {
+  flex-grow: 0;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  accent-color: #888;
+}
+.warning {
+  color: #d8a24a;
+}
+.success {
+  color: #8bcf8b;
+}
+@media (max-width: 660px) {
+  .container {
+    width: 95%;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .checkbox-item {
+    margin-top: 0;
+  }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Universal Playlist Converter</h1>
+
+<div class="input-group">
+  <input type="file" id="fileInput" accept=".m3u,.m3u8,.pls,.xspf,.wpl,.asx,.xml,.csv,.txt,.json">
+  <button id="fileButton" onclick="processFile()">Load local file</button>
+  <button id="cancelButton" class="cancel-button" onclick="cancelProcess()">Cancel</button>
+</div>
+
+<div class="input-group">
+  <input type="text" id="urlInput" placeholder="Enter online playlist URL...">
+  <button id="urlButton" onclick="processOnline()">Load Online Link</button>
+</div>
+
+<div class="input-group">
+  <textarea id="textInput" rows="3" placeholder="Paste playlist content here..."></textarea>
+  <button id="textButton" onclick="processText()">Load Pasted playlist</button>
+</div>
+
+<div class="settings">
+  <div class="input-group">
+    <label for="inputFormat">Input format</label>
+    <select id="inputFormat">
+      <option value="auto">Auto-detect</option>
+      <option value="m3u">M3U / M3U8</option>
+      <option value="pls">PLS</option>
+      <option value="xspf">XSPF</option>
+      <option value="wpl">WPL</option>
+      <option value="asx">ASX</option>
+      <option value="csv">CSV</option>
+      <option value="json">JSON</option>
+      <option value="txt">Plain text URLs</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <label for="outputFormat">Convert to</label>
+    <select id="outputFormat" onchange="updateOutputHint()">
+      <option value="pls">PLS</option>
+      <option value="m3u">M3U</option>
+      <option value="m3u8">M3U8</option>
+      <option value="xspf">XSPF</option>
+      <option value="wpl">WPL</option>
+      <option value="asx">ASX</option>
+      <option value="csv">CSV</option>
+      <option value="json">JSON</option>
+      <option value="txt">Plain text URLs</option>
+    </select>
+  </div>
+</div>
+
+<details class="advanced-settings">
+  <summary>Advanced settings</summary>
+  <div class="settings-grid">
+    <div class="setting-item">
+      <label for="playlistName">Playlist name</label>
+      <input type="text" id="playlistName" placeholder="Converted Playlist">
+    </div>
+    <div class="setting-item">
+      <label for="encodingNote">Metadata handling</label>
+      <select id="encodingNote">
+        <option value="preserve">Preserve available metadata</option>
+        <option value="basic">Basic name + URL only</option>
+      </select>
+    </div>
+    <div class="setting-item checkbox-item">
+      <input type="checkbox" id="dedupeCheckbox" checked>
+      <label for="dedupeCheckbox">Remove duplicate URLs</label>
+    </div>
+    <div class="setting-item checkbox-item">
+      <input type="checkbox" id="skipEmptyCheckbox" checked>
+      <label for="skipEmptyCheckbox">Skip entries without URLs</label>
+    </div>
+  </div>
+</details>
+
+<div class="output-wrapper">
+  <textarea id="output" readonly></textarea>
+  <p id="status"></p>
+</div>
+
+<p id="summaryLine"></p>
+
+<button id="downloadButton" onclick="downloadResult()">Download Converted Playlist</button>
+<a id="downloadLink" style="display:none"></a>
+</div>
+
+<script>
+let currentEntries = [];
+let sourceName = 'playlist';
+let convertedText = '';
+let cancelled = false;
+
+const xmlEsc = value => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&apos;');
+
+function htmlDecode(value) {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = value;
+  return textarea.value;
+}
+
+function setStatus(text, visible = true) {
+  const status = document.getElementById('status');
+  status.textContent = text;
+  status.style.display = visible ? 'block' : 'none';
+  document.getElementById('output').style.display = visible ? 'none' : 'block';
+}
+
+function updateOutputHint() {
+  if (!currentEntries.length) return;
+  try {
+    convertedText = convertEntries(currentEntries, document.getElementById('outputFormat').value);
+    document.getElementById('output').value = convertedText;
+    setStatus('', false);
+    document.getElementById('summaryLine').textContent =
+      `${currentEntries.length} entries ready • ${formatName(document.getElementById('outputFormat').value)}`;
+  } catch (error) {
+    setStatus(`Conversion error: ${error.message}`);
+  }
+}
+
+function formatName(format) {
+  return ({
+    m3u: 'M3U', m3u8: 'M3U8', pls: 'PLS', xspf: 'XSPF',
+    wpl: 'WPL', asx: 'ASX', csv: 'CSV', json: 'JSON', txt: 'plain text'
+  })[format] || format.toUpperCase();
+}
+
+function normalizeEntry(entry) {
+  const e = {
+    name: String(entry.name || entry.title || '').trim(),
+    url: String(entry.url || entry.location || '').trim(),
+    duration: Number.isFinite(Number(entry.duration)) ? Number(entry.duration) : -1,
+    artist: String(entry.artist || '').trim(),
+    album: String(entry.album || '').trim(),
+    genre: String(entry.genre || '').trim(),
+    logo: String(entry.logo || entry.image || '').trim(),
+    group: String(entry.group || entry.category || '').trim(),
+    extra: entry.extra && typeof entry.extra === 'object' ? entry.extra : {}
+  };
+  if (!e.name) e.name = e.url || 'Unknown';
+  return e;
+}
+
+function cleanEntries(entries) {
+  let result = entries.map(normalizeEntry);
+  const skipEmpty = document.getElementById('skipEmptyCheckbox').checked;
+  if (skipEmpty) result = result.filter(e => e.url);
+
+  if (document.getElementById('dedupeCheckbox').checked) {
+    const seen = new Set();
+    result = result.filter(e => {
+      const key = e.url.toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+  return result;
+}
+
+function parseM3U(text) {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+  const entries = [];
+  let pending = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    if (/^#EXTINF:/i.test(line)) {
+      const match = line.match(/^#EXTINF:([-\d]+)\s*(.*)$/i);
+      const duration = match ? Number(match[1]) : -1;
+      const info = match ? match[2] : '';
+      let title = info;
+      const comma = info.indexOf(',');
+      if (comma >= 0) title = info.slice(comma + 1).trim();
+
+      const attrs = {};
+      const attrRe = /([A-Za-z0-9_-]+)="([^"]*)"/g;
+      let m;
+      while ((m = attrRe.exec(info))) attrs[m[1].toLowerCase()] = m[2];
+
+      pending = {
+        name: title,
+        url: '',
+        duration,
+        artist: attrs.artist || '',
+        album: attrs.album || '',
+        genre: attrs['group-title'] || attrs.genre || '',
+        logo: attrs['tvg-logo'] || attrs.logo || '',
+        group: attrs['group-title'] || '',
+        extra: attrs
+      };
+      continue;
+    }
+
+    if (/^#EXTGRP:/i.test(line) && pending) {
+      pending.group = line.slice(line.indexOf(':') + 1).trim();
+      continue;
+    }
+
+    if (/^#/.test(line)) continue;
+
+    if (/^(?:https?|rtmp|rtsp|udp|mms|ftp):/i.test(line) || !pending) {
+      if (pending) {
+        pending.url = line;
+        entries.push(pending);
+        pending = null;
+      } else {
+        entries.push({ name: line, url: line, duration: -1 });
+      }
+    }
+  }
+  return entries;
+}
+
+function parsePLS(text) {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+  const map = {};
+  let title = '';
+  let entries = [];
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith(';')) continue;
+    const eq = line.indexOf('=');
+    if (eq < 0) continue;
+    const key = line.slice(0, eq).trim();
+    const value = line.slice(eq + 1).trim();
+    const m = key.match(/^File(\d+)$/i);
+    const t = key.match(/^Title(\d+)$/i);
+    const d = key.match(/^Length(\d+)$/i);
+    if (m) {
+      const n = m[1];
+      if (!map[n]) map[n] = {};
+      map[n].url = value;
+    } else if (t) {
+      const n = t[1];
+      if (!map[n]) map[n] = {};
+      map[n].name = value;
+    } else if (d) {
+      const n = d[1];
+      if (!map[n]) map[n] = {};
+      map[n].duration = Number(value);
+    } else if (/^Playlist\d*$/i.test(key)) {
+      title = value;
+    }
+  }
+  entries = Object.keys(map).sort((a,b) => Number(a)-Number(b)).map(n => ({
+    name: map[n].name || map[n].url || 'Unknown',
+    url: map[n].url || '',
+    duration: Number.isFinite(map[n].duration) ? map[n].duration : -1
+  }));
+  return { entries, title };
+}
+
+function parseXSPF(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Invalid XSPF/XML document.');
+  const playlistName = doc.querySelector('playlist > title')?.textContent?.trim() || '';
+  const entries = [...doc.querySelectorAll('track')].map(track => {
+    const get = tag => track.querySelector(tag)?.textContent?.trim() || '';
+    const durationMs = Number(get('duration'));
+    return {
+      name: get('title') || get('location') || 'Unknown',
+      url: get('location'),
+      duration: Number.isFinite(durationMs) ? Math.round(durationMs / 1000) : -1,
+      artist: get('creator'),
+      album: get('album'),
+      genre: get('genre')
+    };
+  });
+  return { entries, title: playlistName };
+}
+
+function parseWPL(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Invalid WPL/XML document.');
+  const entries = [...doc.querySelectorAll('media')].map(media => ({
+    name: media.getAttribute('title') || media.getAttribute('name') ||
+          media.getAttribute('src') || 'Unknown',
+    url: media.getAttribute('src') || '',
+    duration: -1
+  }));
+  const title = doc.querySelector('head > title')?.textContent?.trim() || '';
+  return { entries, title };
+}
+
+function parseASX(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Invalid ASX/XML document.');
+  const entries = [...doc.querySelectorAll('entry')].map(entry => {
+    const ref = entry.querySelector('ref');
+    const title = entry.querySelector('title');
+    const author = entry.querySelector('author');
+    return {
+      name: title?.textContent?.trim() || ref?.getAttribute('href') || 'Unknown',
+      url: ref?.getAttribute('href') || '',
+      duration: -1,
+      artist: author?.textContent?.trim() || ''
+    };
+  });
+  return { entries, title: doc.documentElement.getAttribute('title') || '' };
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (quoted && text[i + 1] === '"') { cell += '"'; i++; }
+      else quoted = !quoted;
+    } else if (c === ',' && !quoted) {
+      row.push(cell); cell = '';
+    } else if ((c === '\n' || c === '\r') && !quoted) {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); cell = '';
+      if (row.some(v => v.trim())) rows.push(row);
+      row = [];
+    } else cell += c;
+  }
+  if (cell || row.length) {
+    row.push(cell);
+    if (row.some(v => v.trim())) rows.push(row);
+  }
+  if (!rows.length) return [];
+  const headers = rows[0].map(h => h.trim().toLowerCase());
+  const find = names => {
+    for (const n of names) {
+      const i = headers.indexOf(n);
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+  const nameI = find(['name','title','station','track']);
+  const urlI = find(['url','location','file','src','stream']);
+  const durationI = find(['duration','length']);
+  const artistI = find(['artist','creator']);
+  const albumI = find(['album']);
+  const genreI = find(['genre','group','group-title']);
+  const looksLikeHeader = urlI >= 0 || nameI >= 0;
+  const start = looksLikeHeader ? 1 : 0;
+  return rows.slice(start).map(r => ({
+    name: r[nameI >= 0 ? nameI : 0] || '',
+    url: r[urlI >= 0 ? urlI : Math.min(1, r.length - 1)] || '',
+    duration: durationI >= 0 ? Number(r[durationI]) : -1,
+    artist: artistI >= 0 ? r[artistI] : '',
+    album: albumI >= 0 ? r[albumI] : '',
+    genre: genreI >= 0 ? r[genreI] : ''
+  }));
+}
+
+function parseJSON(text) {
+  const data = JSON.parse(text);
+  const arr = Array.isArray(data) ? data : (Array.isArray(data.entries) ? data.entries :
+             Array.isArray(data.tracks) ? data.tracks :
+             Array.isArray(data.playlist) ? data.playlist : null);
+  if (!arr) throw new Error('JSON must contain an array of playlist entries.');
+  return arr.map(e => typeof e === 'string' ? { name: e, url: e } : e);
+}
+
+function parseTXT(text) {
+  return text.split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(s => s && !s.startsWith('#'))
+    .map(url => ({ name: url, url, duration: -1 }));
+}
+
+function detectFormat(text, fileName = '') {
+  const ext = fileName.toLowerCase().split('.').pop();
+  if (['m3u','m3u8'].includes(ext)) return 'm3u';
+  if (ext === 'pls') return 'pls';
+  if (ext === 'xspf') return 'xspf';
+  if (ext === 'wpl') return 'wpl';
+  if (ext === 'asx') return 'asx';
+  if (ext === 'csv') return 'csv';
+  if (ext === 'json') return 'json';
+  if (ext === 'txt') return 'txt';
+
+  const trimmed = text.trim();
+  if (/^#EXTM3U\b/i.test(trimmed) || /^#EXTINF:/im.test(trimmed)) return 'm3u';
+  if (/^\s*\[playlist\]/im.test(trimmed) || /\bFile\d+=/i.test(trimmed)) return 'pls';
+  if (/<playlist[^>]*xmlns=["']http:\/\/xspf\.org/i.test(trimmed)) return 'xspf';
+  if (/<smil\b/i.test(trimmed) || /<wpl\b/i.test(trimmed)) return 'wpl';
+  if (/<asx\b/i.test(trimmed)) return 'asx';
+  if (/^\s*[\[{]/.test(trimmed)) return 'json';
+  if (trimmed.includes(',') && /(^|,)(url|location|name|title)(,|$)/im.test(trimmed.split(/\r?\n/)[0])) return 'csv';
+  return 'txt';
+}
+
+function parsePlaylist(text, format) {
+  switch (format) {
+    case 'm3u': return { entries: parseM3U(text), title: '' };
+    case 'pls': return parsePLS(text);
+    case 'xspf': return parseXSPF(text);
+    case 'wpl': return parseWPL(text);
+    case 'asx': return parseASX(text);
+    case 'csv': return { entries: parseCSV(text), title: '' };
+    case 'json': return { entries: parseJSON(text), title: '' };
+    case 'txt': return { entries: parseTXT(text), title: '' };
+    default: throw new Error(`Unsupported input format: ${format}`);
+  }
+}
+
+function formatDuration(seconds) {
+  const n = Number(seconds);
+  // This converter is intended for radio/live streams.
+  // Unknown, zero, or negative durations are represented as indefinite (-1).
+  return Number.isFinite(n) && n > 0 ? String(Math.round(n)) : '-1';
+}
+
+function convertM3U(entries, utf8 = false) {
+  const lines = [utf8 ? '#EXTM3U' : '#EXTM3U'];
+  for (const e of entries) {
+    const attrs = [];
+    if (e.logo) attrs.push(`tvg-logo="${e.logo.replace(/"/g, '&quot;')}"`);
+    if (e.group) attrs.push(`group-title="${e.group.replace(/"/g, '&quot;')}"`);
+    if (e.artist) attrs.push(`artist="${e.artist.replace(/"/g, '&quot;')}"`);
+    if (e.album) attrs.push(`album="${e.album.replace(/"/g, '&quot;')}"`);
+    const attrText = attrs.length ? ' ' + attrs.join(' ') : '';
+    lines.push(`#EXTINF:${formatDuration(e.duration)}${attrText},${e.name}`);
+    if (e.group) lines.push(`#EXTGRP:${e.group}`);
+    lines.push(e.url);
+  }
+  return lines.join('\n');
+}
+
+function convertPLS(entries) {
+  const lines = ['[playlist]'];
+  entries.forEach((e, i) => {
+    const n = i + 1;
+    lines.push(`File${n}=${e.url}`);
+    lines.push(`Title${n}=${e.name}`);
+    lines.push(`Length${n}=${formatDuration(e.duration)}`);
+  });
+  lines.push(`NumberOfEntries=${entries.length}`);
+  lines.push('Version=2');
+  return lines.join('\n');
+}
+
+function convertXSPF(entries) {
+  const name = document.getElementById('playlistName').value.trim() || 'Converted Playlist';
+  const lines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<playlist version="1" xmlns="http://xspf.org/ns/0/">',
+    `  <title>${xmlEsc(name)}</title>`,
+    '  <trackList>'
+  ];
+  for (const e of entries) {
+    lines.push('    <track>');
+    lines.push(`      <location>${xmlEsc(e.url)}</location>`);
+    lines.push(`      <title>${xmlEsc(e.name)}</title>`);
+    if (e.artist) lines.push(`      <creator>${xmlEsc(e.artist)}</creator>`);
+    if (e.album) lines.push(`      <album>${xmlEsc(e.album)}</album>`);
+    if (e.genre) lines.push(`      <genre>${xmlEsc(e.genre)}</genre>`);
+    if (e.duration >= 0) lines.push(`      <duration>${Math.round(e.duration * 1000)}</duration>`);
+    lines.push('    </track>');
+  }
+  lines.push('  </trackList>', '</playlist>');
+  return lines.join('\n');
+}
+
+function convertWPL(entries) {
+  const name = document.getElementById('playlistName').value.trim() || 'Converted Playlist';
+  const lines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<smil xmlns="http://www.w3.org/2001/SMIL20/Language">',
+    '  <head>',
+    `    <title>${xmlEsc(name)}</title>`,
+    '  </head>',
+    '  <body>',
+    '    <seq>'
+  ];
+  for (const e of entries) {
+    lines.push(`      <media src="${xmlEsc(e.url)}" title="${xmlEsc(e.name)}" />`);
+  }
+  lines.push('    </seq>', '  </body>', '</smil>');
+  return lines.join('\n');
+}
+
+function convertASX(entries) {
+  const name = document.getElementById('playlistName').value.trim() || 'Converted Playlist';
+  const lines = ['<?xml version="1.0" encoding="UTF-8"?>', `<ASX version="3.0" TITLE="${xmlEsc(name)}">`];
+  for (const e of entries) {
+    lines.push('  <Entry>');
+    lines.push(`    <Title>${xmlEsc(e.name)}</Title>`);
+    if (e.artist) lines.push(`    <Author>${xmlEsc(e.artist)}</Author>`);
+    lines.push(`    <Ref href="${xmlEsc(e.url)}" />`);
+    lines.push('  </Entry>');
+  }
+  lines.push('</ASX>');
+  return lines.join('\n');
+}
+
+function csvCell(value) {
+  return `"${String(value ?? '').replace(/"/g, '""')}"`;
+}
+
+function convertCSV(entries) {
+  const headers = ['name','url','duration','artist','album','genre','logo','group'];
+  const lines = [headers.join(',')];
+  for (const e of entries) {
+    lines.push(headers.map(h => csvCell(e[h])).join(','));
+  }
+  return lines.join('\n');
+}
+
+function convertJSON(entries) {
+  const preserve = document.getElementById('encodingNote').value === 'preserve';
+  return JSON.stringify(entries.map(e => preserve ? e : ({
+    name: e.name, url: e.url, duration: e.duration
+  })), null, 2);
+}
+
+function convertTXT(entries) {
+  return entries.map(e => e.url).join('\n');
+}
+
+function convertEntries(entries, format) {
+  switch (format) {
+    case 'm3u': return convertM3U(entries);
+    case 'm3u8': return convertM3U(entries, true);
+    case 'pls': return convertPLS(entries);
+    case 'xspf': return convertXSPF(entries);
+    case 'wpl': return convertWPL(entries);
+    case 'asx': return convertASX(entries);
+    case 'csv': return convertCSV(entries);
+    case 'json': return convertJSON(entries);
+    case 'txt': return convertTXT(entries);
+    default: throw new Error(`Unsupported output format: ${format}`);
+  }
+}
+
+function extensionFor(format) {
+  return ({
+    m3u: 'm3u', m3u8: 'm3u8', pls: 'pls', xspf: 'xspf',
+    wpl: 'wpl', asx: 'asx', csv: 'csv', json: 'json', txt: 'txt'
+  })[format] || 'txt';
+}
+
+function baseOutputName() {
+  let base = sourceName.replace(/\.[^.]+$/, '');
+  if (!base || base === 'playlist') base = 'playlist';
+  return `${base}_converted`;
+}
+
+function finishLoad(text, fileName) {
+  cancelled = false;
+  sourceName = fileName || 'playlist';
+  const requested = document.getElementById('inputFormat').value;
+  const format = requested === 'auto' ? detectFormat(text, fileName) : requested;
+
+  try {
+    const parsed = parsePlaylist(text, format);
+    if (parsed.title && !document.getElementById('playlistName').value.trim()) {
+      document.getElementById('playlistName').value = parsed.title;
+    }
+    currentEntries = cleanEntries(parsed.entries || []);
+    if (!currentEntries.length) throw new Error('No playlist entries with URLs were found.');
+
+    convertedText = convertEntries(currentEntries, document.getElementById('outputFormat').value);
+    document.getElementById('output').value = convertedText;
+    setStatus('', false);
+    document.getElementById('downloadButton').style.display = 'block';
+
+    const removed = (parsed.entries || []).length - currentEntries.length;
+    document.getElementById('summaryLine').textContent =
+      `Loaded ${parsed.entries.length} entries • ${currentEntries.length} output entries` +
+      (removed > 0 ? ` • ${removed} removed` : '') +
+      ` • ${formatName(format)} → ${formatName(document.getElementById('outputFormat').value)}`;
+  } catch (error) {
+    currentEntries = [];
+    convertedText = '';
+    document.getElementById('output').value = '';
+    document.getElementById('downloadButton').style.display = 'none';
+    setStatus(`Error: ${error.message}`);
+    document.getElementById('summaryLine').textContent = '';
+  }
+}
+
+function processFile() {
+  const input = document.getElementById('fileInput');
+  if (!input.files.length) return alert('Please upload a playlist file.');
+  const file = input.files[0];
+  file.text().then(text => finishLoad(text, file.name)).catch(error => {
+    alert(`Error reading file: ${error.message}`);
+  });
+}
+
+function parseGitHubFileURL(input) {
+  let url;
+  try {
+    url = new URL(input);
+  } catch {
+    return null;
+  }
+
+  const host = url.hostname.toLowerCase();
+  const parts = url.pathname.split('/').filter(Boolean);
+
+  if (host === 'github.com') {
+    // /OWNER/REPO/blob/BRANCH/PATH
+    if (parts.length >= 5 && parts[2].toLowerCase() === 'blob') {
+      return {
+        owner: parts[0],
+        repo: parts[1],
+        ref: parts[3],
+        path: parts.slice(4).join('/')
+      };
+    }
+
+    // /OWNER/REPO/raw/BRANCH/PATH
+    if (parts.length >= 5 && parts[2].toLowerCase() === 'raw') {
+      return {
+        owner: parts[0],
+        repo: parts[1],
+        ref: parts[3],
+        path: parts.slice(4).join('/')
+      };
+    }
+  }
+
+  if (host === 'raw.githubusercontent.com' && parts.length >= 4) {
+    let refIndex = 2;
+
+    // /OWNER/REPO/refs/heads/BRANCH/PATH
+    if (parts[2] === 'refs' && parts[3] === 'heads' && parts.length >= 5) {
+      refIndex = 4;
+    } else if (parts[2] === 'refs' && parts[3] === 'tags' && parts.length >= 5) {
+      refIndex = 4;
+    }
+
+    if (parts.length > refIndex) {
+      return {
+        owner: parts[0],
+        repo: parts[1],
+        ref: parts[refIndex],
+        path: parts.slice(refIndex + 1).join('/')
+      };
+    }
+  }
+
+  return null;
+}
+
+function githubRawURL(info) {
+  return `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.ref}/${info.path}`;
+}
+
+function githubAPIURL(info) {
+  return `https://api.github.com/repos/${encodeURIComponent(info.owner)}/${encodeURIComponent(info.repo)}/contents/${info.path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(info.ref)}`;
+}
+
+function decodeBase64UTF8(base64) {
+  const binary = atob(base64.replace(/\s/g, ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+async function fetchGitHubAPI(info) {
+  const response = await fetch(githubAPIURL(info), {
+    method: 'GET',
+    cache: 'no-store',
+    redirect: 'follow',
+    headers: { 'Accept': 'application/vnd.github+json' }
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub API HTTP ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  if (!data || typeof data.content !== 'string') {
+    throw new Error('GitHub API did not return file content.');
+  }
+
+  return decodeBase64UTF8(data.content);
+}
+
+function normalizeOnlineURL(input) {
+  const url = new URL(input);
+  const githubInfo = parseGitHubFileURL(input);
+  return githubInfo ? githubRawURL(githubInfo) : url.href;
+}
+
+async function fetchOnlinePlaylist(input) {
+  const githubInfo = parseGitHubFileURL(input);
+
+  if (githubInfo) {
+    let lastError = null;
+
+    // Direct raw access first.
+    for (const url of [githubRawURL(githubInfo), input]) {
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          cache: 'no-store',
+          redirect: 'follow'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+
+        const text = await response.text();
+        if (!text.trim()) throw new Error('The fetched playlist is empty.');
+        return text;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    // Browser-readable GitHub API fallback for public repositories.
+    try {
+      return await fetchGitHubAPI(githubInfo);
+    } catch (error) {
+      throw new Error(
+        `Unable to fetch the GitHub playlist. Raw GitHub failed, and the GitHub API fallback also failed: ${error.message}`
+      );
+    }
+  }
+
+  const response = await fetch(input, {
+    method: 'GET',
+    cache: 'no-store',
+    redirect: 'follow'
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+
+  const text = await response.text();
+  if (!text.trim()) throw new Error('The fetched playlist is empty.');
+  return text;
+}
+
+async function processOnline() {
+  const input = document.getElementById('urlInput').value.trim();
+  if (!input) return alert('Please enter an online playlist URL.');
+
+  cancelled = false;
+  document.getElementById('cancelButton').style.display = 'flex';
+  document.getElementById('urlButton').disabled = true;
+  setStatus('Fetching online playlist...');
+
+  try {
+    const text = await fetchOnlinePlaylist(input);
+    if (cancelled) return;
+
+    let name = 'playlist';
+    try {
+      const path = new URL(input).pathname.split('/').pop();
+      if (path) name = decodeURIComponent(path);
+    } catch {}
+
+    finishLoad(text, name);
+  } catch (error) {
+    if (error.name === 'AbortError') setStatus('Online playlist fetch cancelled.');
+    else setStatus(`Error fetching online playlist: ${error.message}\nThe remote server may block browser CORS requests.`);
+  } finally {
+    document.getElementById('cancelButton').style.display = 'none';
+    document.getElementById('urlButton').disabled = false;
+  }
+}
+
+function processText() {
+  const text = document.getElementById('textInput').value;
+  if (!text.trim()) return alert('Please paste playlist content.');
+  finishLoad(text, 'pasted_playlist.m3u');
+}
+
+function cancelProcess() {
+  cancelled = true;
+  document.getElementById('cancelButton').style.display = 'none';
+  setStatus('Operation cancelled.');
+  document.getElementById('urlButton').disabled = false;
+}
+
+function downloadResult() {
+  if (!convertedText) return;
+  const format = document.getElementById('outputFormat').value;
+  const mime = ({
+    m3u: 'audio/x-mpegurl', m3u8: 'application/vnd.apple.mpegurl',
+    pls: 'audio/x-scpls', xspf: 'application/xspf+xml',
+    wpl: 'application/vnd.ms-wpl', asx: 'video/x-ms-asf',
+    csv: 'text/csv', json: 'application/json', txt: 'text/plain'
+  })[format] || 'text/plain';
+
+  const blob = new Blob([convertedText], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const link = document.getElementById('downloadLink');
+  link.href = url;
+  link.download = `${baseOutputName()}.${extensionFor(format)}`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.getElementById('playlistName').addEventListener('input', updateOutputHint);
+document.getElementById('encodingNote').addEventListener('change', updateOutputHint);
+document.getElementById('dedupeCheckbox').addEventListener('change', () => {
+  if (!currentEntries.length) return;
+  currentEntries = cleanEntries(currentEntries);
+  updateOutputHint();
+});
+document.getElementById('skipEmptyCheckbox').addEventListener('change', () => {
+  if (!currentEntries.length) return;
+  currentEntries = cleanEntries(currentEntries);
+  updateOutputHint();
+});
+</script>
+</body>
+</html>
