@@ -746,6 +746,13 @@ select { height: 46px; }
     }
   }
 
+  /* optional fields that at least one entry actually has data for (duration > 0 counts as data) */
+  function fieldsWithData(entries, fields) {
+    return fields.filter((f) =>
+      entries.some((e) => (f === 'duration' ? Number(e.duration) > 0 : String(e[f] ?? '').trim() !== '')),
+    );
+  }
+
   function formatDuration(seconds) {
     const n = Number(seconds);
     // This converter is intended for radio/live streams.
@@ -801,7 +808,7 @@ select { height: 46px; }
       if (e.artist) lines.push(`      <creator>${xmlEsc(e.artist)}</creator>`);
       if (e.album) lines.push(`      <album>${xmlEsc(e.album)}</album>`);
       if (e.genre) lines.push(`      <genre>${xmlEsc(e.genre)}</genre>`);
-      if (e.duration >= 0)
+      if (e.duration > 0)
         lines.push(`      <duration>${Math.round(e.duration * 1000)}</duration>`);
       lines.push('    </track>');
     }
@@ -847,7 +854,11 @@ select { height: 46px; }
   }
 
   function convertCSV(entries) {
-    const headers = ['name', 'url', 'duration', 'artist', 'album', 'genre', 'logo', 'group'];
+    const headers = [
+      'name',
+      'url',
+      ...fieldsWithData(entries, ['duration', 'artist', 'album', 'genre', 'logo', 'group']),
+    ];
     const lines = [headers.join(',')];
     for (const e of entries) {
       lines.push(headers.map((h) => csvCell(e[h])).join(','));
@@ -856,16 +867,12 @@ select { height: 46px; }
   }
 
   function convertJSON(entries, { preserve }) {
+    const optional = preserve
+      ? ['duration', 'artist', 'album', 'genre', 'logo', 'group']
+      : ['duration'];
+    const keys = ['name', 'url', ...fieldsWithData(entries, optional)];
     return JSON.stringify(
-      entries.map((e) =>
-        preserve
-          ? e
-          : {
-              name: e.name,
-              url: e.url,
-              duration: e.duration,
-            },
-      ),
+      entries.map((e) => Object.fromEntries(keys.map((k) => [k, e[k]]))),
       null,
       2,
     );
